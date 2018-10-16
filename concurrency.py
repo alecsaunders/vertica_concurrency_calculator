@@ -31,8 +31,8 @@ class ConcurrencyCalculator():
             if start_position == 'end':
                 data = data[-num_lines:]
             if start_position == 'random' and num_lines < len(data):
-                    start_int_rand = np.random.randint(1, len(data) - num_lines)
-                    data = data[start_int_rand - 1: start_int_rand + num_lines - 1]
+                start_int_rand = np.random.randint(1, len(data) - num_lines)
+                data = data[start_int_rand - 1: start_int_rand + num_lines - 1]
         return data
 
     def calculate(self):
