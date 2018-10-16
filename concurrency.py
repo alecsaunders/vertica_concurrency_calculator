@@ -24,17 +24,15 @@ class ConcurrencyCalculator():
 
     @staticmethod
     def get_data_file_contents(input_file, num_lines, start_position):
+        data = open(input_file, 'r').readlines()
         if num_lines:
             if start_position == 'beginning':
-                data = open(input_file, 'r').readlines()[:num_lines]
+                data = data[:num_lines]
             if start_position == 'end':
-                data = open(input_file, 'r').readlines()[-num_lines:]
+                data = data[-num_lines:]
             if start_position == 'random':
-                data_file = open(input_file, 'r').readlines()
-                start_int_rand = np.random.randint(1, len(data_file) - num_lines)
-                data = data_file[start_int_rand - 1: start_int_rand + num_lines - 1]
-        else:
-            data = open(input_file, 'r').readlines()
+                start_int_rand = np.random.randint(1, len(data) - num_lines)
+                data = data[start_int_rand - 1: start_int_rand + num_lines - 1]
         return data
 
     def calculate(self):
