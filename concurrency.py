@@ -15,14 +15,15 @@ class ConcurrencyCalculator():
         self.con_array = []
 
         # Progress Bar
-        self.datalen = 0
+        self.data_len = 0
         self.bar_length = 50
 
         # Script time
-        self.start_time = None
-        self.end_time = None
+        self.start = None
+        self.end = None
 
-    def get_data_file_contents(self, input_file, num_lines, start_position):
+    @staticmethod
+    def get_data_file_contents(input_file, num_lines, start_position):
         if num_lines:
             if start_position == 'beginning':
                 data = open(input_file, 'r').readlines()[:num_lines]
@@ -38,7 +39,7 @@ class ConcurrencyCalculator():
 
     def calculate(self):
         data = self.data
-        self.datalen = len(data)
+        self.data_len = len(data)
 
         self.start = datetime.now()
         try:
@@ -56,7 +57,6 @@ class ConcurrencyCalculator():
                     comp_start = float(jreq[0])
                     comp_end = float(jreq[1])
 
-
                     if comp_end > self.max_end_epoch:
                         self.max_end_epoch = comp_end
 
@@ -72,6 +72,10 @@ class ConcurrencyCalculator():
             print("")
             print("KeyboardInterrupt")
             print("- Printing all data up to this point")
+        except Exception as e:
+            print(query)
+            print(j)
+            raise e
 
         self.print_results()
 
@@ -92,9 +96,9 @@ class ConcurrencyCalculator():
                             slice_index = slice_index - 100
                 except Exception as e:
                     print("")
-                    print("Unhandled exception occured")
+                    print("Unhandled exception occurred")
                     print(e)
-                    print("Error occured at indices")
+                    print("Error occurred at indices")
                     print(i)
                     print("")
                     print("- Printing all data up to this point")
@@ -119,8 +123,10 @@ class ConcurrencyCalculator():
         return end_index
 
     def update_progress_bar(self, index):
-        progress = int(float(index)/float(self.datalen) * self.bar_length)
-        text = "\rProgress: [{0}] {1}% {2}".format( "#"*progress + "-"*(self.bar_length-progress), int(float(progress) /float(self.bar_length)*100), "{0}/{1}".format(index, self.datalen))
+        progress = int(float(index) / float(self.data_len) * self.bar_length)
+        text = "\rProgress: [{0}] {1}% {2}".format("#" * progress + "-" * (self.bar_length - progress),
+                                                   int(float(progress) / float(self.bar_length) * 100),
+                                                   "{0}/{1}".format(index, self.data_len))
         sys.stdout.write(text)
         sys.stdout.flush()
 
@@ -159,21 +165,23 @@ class ConcurrencyCalculator():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Script to get concurrency stats for Vertica queries')
-    parser.add_argument('-f', '--input_file', metavar='', help='Input file to parse for concurrency stats (default: csv/output.csv)')
+    parser.add_argument('-f', '--input_file', metavar='',
+                        help='Input file to parse for concurrency stats (default: csv/output.csv)')
     parser.add_argument('-n', '--num_lines', metavar='', type=int, help='Number the output lines, starting at 1')
-    parser.add_argument('-s', '--start_position', metavar='', choices=['beginning', 'end', 'random'], help='Which position of the file to start reading files from. Options are: beginning, end, random')
+    parser.add_argument('-s', '--start_position', metavar='', choices=['beginning', 'end', 'random'],
+                        help='Position of the file to start reading files from. Options are: beginning, end, random')
     args = parser.parse_args()
 
-    input_file = args.input_file or 'csv/output.csv'
-    num_lines = args.num_lines
-    if num_lines:
-        start_position = args.start_position or 'end'
+    input_file_arg = args.input_file or 'csv/output.csv'
+    num_lines_arg = args.num_lines
+    if num_lines_arg:
+        start_position_arg = args.start_position or 'end'
     else:
         if args.start_position:
             print("Number of lines not specified. Use -n option to specify number of lines to read.")
             sys.exit(1)
         else:
-            start_position = None
+            start_position_arg = None
 
-    cc = ConcurrencyCalculator(input_file, num_lines, start_position)
+    cc = ConcurrencyCalculator(input_file_arg, num_lines_arg, start_position_arg)
     cc.calculate()
