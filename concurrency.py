@@ -63,6 +63,9 @@ class ConcurrencyCalculator():
             other_srt_epoch, other_end_epoch = self.parse_query(other_query)
             if other_srt_epoch < srt_epoch and other_end_epoch > srt_epoch:
                 concurrency = concurrency + 1
+
+            if other_srt_epoch > end_epoch:
+                break
         return concurrency
 
 
