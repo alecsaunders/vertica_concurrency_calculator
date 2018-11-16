@@ -9,6 +9,7 @@ import numpy as np
 class ConcurrencyCalculator():
 
     def __init__(self, input_file, num_lines, start_position):
+        print("slice test")
         self.data = self.get_data_file_contents(input_file, num_lines, start_position)
 
         self.max_end_epoch = float(0.0)
