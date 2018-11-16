@@ -39,13 +39,17 @@ class ConcurrencyCalculator():
         self.data_len = len(data)
         self.start = datetime.now()
 
-        for i, query in enumerate(data, 1):
-            self.cur_index = i
-            concurrency = self.get_concurrency_of_query(query)
-            self.con_array.append(concurrency)
-            self.update_progress_bar()
-
-        self.print_results()
+        try:
+            for i, query in enumerate(data, 1):
+                self.cur_index = i
+                concurrency = self.get_concurrency_of_query(query)
+                self.con_array.append(concurrency)
+                self.update_progress_bar()
+            self.print_results()
+        except KeyboardInterrupt:
+            print("")
+            print('KeyboardInterrupt: User canceled current operation')
+            self.print_results()
 
     def parse_query(self, query):
         start_epoch = query.split('|')[0].strip()
