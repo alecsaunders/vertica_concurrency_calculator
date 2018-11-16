@@ -10,9 +10,8 @@ class ConcurrencyCalculator():
 
     def __init__(self, input_file, num_lines, start_position):
         self.data = self.get_data_file_contents(input_file, num_lines, start_position)
-
-        self.max_end_epoch = float(0.0)
         self.con_array = []
+        self.slice_index = 0
 
         # Progress Bar
         self.data_len = 0
@@ -38,6 +37,7 @@ class ConcurrencyCalculator():
     def calculate(self):
         data = self.data
         self.data_len = len(data)
+        self.start = datetime.now()
 
         try:
             for i, query in enumerate(data, 1):
@@ -82,7 +82,7 @@ class ConcurrencyCalculator():
         progress = int(float(self.cur_index) / float(self.data_len) * self.bar_length)
         text = "\rProgress: [{0}] {1}% {2}".format("#" * progress + "-" * (self.bar_length - progress),
                                                    int(float(progress) / float(self.bar_length) * 100),
-                                                   "{0}/{1}".format(index, self.data_len))
+                                                   "{0}/{1}".format(self.cur_index, self.data_len))
         sys.stdout.write(text)
         sys.stdout.flush()
 
