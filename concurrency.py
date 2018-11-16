@@ -59,7 +59,7 @@ class ConcurrencyCalculator():
     def parse_other_queries_for_concurrency(self, srt_epoch, end_epoch):
         concurrency = 0
         self.set_slice_index(srt_epoch)
-        sliced_data = self.data[self.slice_index:]
+        sliced_data = self.data[self.slice_index:self.cur_index]
         for j, other_query in enumerate(sliced_data):
             other_srt_epoch, other_end_epoch = self.parse_query(other_query)
             if other_srt_epoch < srt_epoch and other_end_epoch > srt_epoch:
