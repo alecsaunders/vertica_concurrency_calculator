@@ -9,9 +9,10 @@ import numpy as np
 class ConcurrencyCalculator():
 
     def __init__(self, input_file, num_lines, start_position):
+        print("slice test")
         self.data = self.get_data_file_contents(input_file, num_lines, start_position)
         self.con_array = []
-        self.slice_index = 0
+        self.before_current_query_end_index = 0
 
         # Progress Bar
         self.data_len = 0
@@ -39,11 +40,10 @@ class ConcurrencyCalculator():
         self.data_len = len(data)
         self.start = datetime.now()
 
-        for i, query in enumerate(data, 1):
+        for i, query in enumerate(data):
             self.cur_index = i
             concurrency = self.get_concurrency_of_query(query)
             self.con_array.append(concurrency)
-            self.update_progress_bar()
 
         self.print_results()
 
@@ -58,29 +58,29 @@ class ConcurrencyCalculator():
 
     def parse_other_queries_for_concurrency(self, srt_epoch, end_epoch):
         concurrency = 0
-        self.set_slice_index(srt_epoch)
-        sliced_data = self.data[self.slice_index:]
+        sliced_data = self.get_sliced_data_list()
         for j, other_query in enumerate(sliced_data):
             other_srt_epoch, other_end_epoch = self.parse_query(other_query)
             if other_srt_epoch < srt_epoch and other_end_epoch > srt_epoch:
                 concurrency = concurrency + 1
-            if other_srt_epoch > srt_epoch:
+            if j > self.before_current_query_end_index and other_end_epoch < srt_epoch:
+                self.before_current_query_end_index = j
+            if other_srt_epoch > end_epoch:
                 break
         return concurrency
 
-    def set_slice_index(self, srt_epoch):
-        tmp_slice_index = self.cur_index - 100 if self.cur_index >= 100 else 0
-        slice_end_epoch = self.data[tmp_slice_index].split('|')[1].strip()
-        if slice_end_epoch < srt_epoch:
-            self.slice_index = tmp_slice_index
+    def get_sliced_data_list(self):
+        if self.cur_index > 1:
+            return self.data[self.before_current_query_end_index:]
+        return self.data
 
-    def update_progress_bar(self):
-        progress = int(float(self.cur_index) / float(self.data_len) * self.bar_length)
-        text = "\rProgress: [{0}] {1}% {2}".format("#" * progress + "-" * (self.bar_length - progress),
-                                                   int(float(progress) / float(self.bar_length) * 100),
-                                                   "{0}/{1}".format(self.cur_index, self.data_len))
-        sys.stdout.write(text)
-        sys.stdout.flush()
+    # def update_progress_bar(self, index):
+    #     progress = int(float(index) / float(self.data_len) * self.bar_length)
+    #     text = "\rProgress: [{0}] {1}% {2}".format("#" * progress + "-" * (self.bar_length - progress),
+    #                                                int(float(progress) / float(self.bar_length) * 100),
+    #                                                "{0}/{1}".format(index, self.data_len))
+    #     sys.stdout.write(text)
+    #     sys.stdout.flush()
 
     def print_results(self):
         self.end = datetime.now()
