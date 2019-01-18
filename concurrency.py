@@ -53,11 +53,12 @@ class ConcurrencyCalculator():
                 if i % update_interval == 0:
                     self.update_progress_bar(self.cur_index, data_len, self.bar_length)
         except KeyboardInterrupt:
+            self.cur_index = len(self.con_array)
             self.update_progress_bar(self.cur_index, data_len, self.bar_length)
             print("")
             print('KeyboardInterrupt: User canceled current operation')
         finally:
-            self.print_results()
+            self.output_results()
 
     @staticmethod
     def parse_query(query):
@@ -99,13 +100,16 @@ class ConcurrencyCalculator():
         sys.stdout.write(text)
         sys.stdout.flush()
 
-    def print_results(self):
+    def output_results(self):
         self.end = datetime.now()
         npArr = np.array(self.con_array)
 
         max = npArr.max()
         num_of_max = (npArr == max).sum()
 
+        self.print_resutls(npArr, max, num_of_max)
+
+    def print_resutls(self, npArr, max, num_of_max):
         print("")
         print("---RESULT---")
         print("Q1 Conn       : {}".format(np.percentile(npArr, 25)))
