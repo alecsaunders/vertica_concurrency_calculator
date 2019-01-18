@@ -14,7 +14,6 @@ class ConcurrencyCalculator():
         self.slice_index = 0
 
         # Progress Bar
-        self.data_len = 0
         self.bar_length = 50
 
         # Script time
@@ -36,22 +35,32 @@ class ConcurrencyCalculator():
 
     def calculate(self):
         data = self.data
-        self.data_len = len(data)
+        data_len = len(data)
         self.start = datetime.now()
+
+        if data_len >= 10000:
+            update_interval = 100
+        elif data_len >= 200:
+            update_interval = 10
+        else:
+            update_interval = 1
 
         try:
             for i, query in enumerate(data, 1):
                 self.cur_index = i
                 concurrency = self.get_concurrency_of_query(query)
                 self.con_array.append(concurrency)
-                self.update_progress_bar()
-            self.print_results()
+                if i % update_interval == 0:
+                    self.update_progress_bar(self.cur_index, data_len, self.bar_length)
         except KeyboardInterrupt:
+            self.update_progress_bar(self.cur_index, data_len, self.bar_length)
             print("")
             print('KeyboardInterrupt: User canceled current operation')
+        finally:
             self.print_results()
 
-    def parse_query(self, query):
+    @staticmethod
+    def parse_query(query):
         start_epoch = query.split('|')[0].strip()
         end_epoch = query.split('|')[1].strip()
         return start_epoch, end_epoch
@@ -78,11 +87,15 @@ class ConcurrencyCalculator():
         if slice_end_epoch < srt_epoch:
             self.slice_index = tmp_slice_index
 
-    def update_progress_bar(self):
-        progress = int(float(self.cur_index) / float(self.data_len) * self.bar_length)
-        text = "\rProgress: [{0}] {1}% {2}".format("#" * progress + "-" * (self.bar_length - progress),
-                                                   int(float(progress) / float(self.bar_length) * 100),
-                                                   "{0}/{1}".format(self.cur_index, self.data_len))
+    @staticmethod
+    def update_progress_bar(cur_index, data_len, bar_length):
+        progress = int(float(cur_index) / float(data_len) * bar_length)
+        text = "\rProgress: [{0}] {1}% {2}/{3}".format(
+            "#" * progress + "-" * (bar_length - progress),
+            int(float(progress) / float(bar_length) * 100),
+            cur_index,
+            data_len
+        )
         sys.stdout.write(text)
         sys.stdout.flush()
 
