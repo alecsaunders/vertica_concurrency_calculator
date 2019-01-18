@@ -125,7 +125,7 @@ if __name__ == '__main__':
                         help='Input file to parse for concurrency stats (default: csv/output.csv)')
     parser.add_argument('-n', '--num_lines', metavar='', type=int, help='Number the output lines, starting at 1')
     parser.add_argument('-s', '--start_position', metavar='', choices=['beginning', 'end', 'random'],
-                        help='Position of the file to start reading files from. Options are: beginning, end, random')
+                        help='Position of the file to start reading files from. Options are: beginning, end, random (default: end)')
     args = parser.parse_args()
 
     input_file_arg = args.input_file or 'csv/output.csv'
