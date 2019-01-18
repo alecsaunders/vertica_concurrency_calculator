@@ -169,6 +169,7 @@ class ConcurrencyCalculator():
 
         output_stats['buckets'] = buckets
         output_stats['time_diff'] = self.end - self.start
+        self.output_stats = output_stats
 
         if self.format_type == 'text':
             self.print_resutls(output_stats)
