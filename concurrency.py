@@ -10,7 +10,7 @@ import numpy as np
 
 class ConcurrencyCalculator():
 
-    def __init__(self, input_file, num_lines, start_position, config=None):
+    def __init__(self, input_file, num_lines, start_position, format_type, config=None):
         self.data = self.get_data_file_contents(input_file, num_lines, start_position)
         self.con_array = []
         self.slice_index = 0
@@ -22,33 +22,26 @@ class ConcurrencyCalculator():
         self.start = None
         self.end = None
 
-        self.format_type = config["FORMAT_TYPE"]["type"]
+        self.format_type = format_type
         if self.format_type == 'text':
-            format_str_conf = config['FORMAT_STRINGS']
-            self.set_output_strings(format_str_conf)
+            self.set_output_strings(config)
 
-    def set_output_strings(self, format_str_conf=None):
-        if format_str_conf.get("stats_string"):
-            self.stats_string = format_str_conf.get("stats_string")
-        else:
-            self.stats_string = (
-                "Q1 Conn       : {q1}\n"
-                "Median Conn   : {median}\n"
-                "Q3 Conn       : {q3}\n"
-                "95th % Conn   : {p95}\n"
-                "98th % Conn   : {p98}\n"
-                "Max Conn      : {max}\n"
-                "Num of MAX    : {num_of_max}\n"
-                "Avgerage Conn : {avg}\n"
-                "Query Count   : {count}"
-            )
+
+    def set_output_strings(self, config=None):
+
+        self.stats_string = (
+            "Q1 Conn       : {q1}\n"
+            "Median Conn   : {median}\n"
+            "Q3 Conn       : {q3}\n"
+            "95th % Conn   : {p95}\n"
+            "98th % Conn   : {p98}\n"
+            "Max Conn      : {max}\n"
+            "Num of MAX    : {num_of_max}\n"
+            "Avgerage Conn : {avg}\n"
+            "Query Count   : {count}"
+        )
         self.bucket_count_string = 'Count of ({0}) : {1}'
-
-        if format_str_conf.get("script_time_string"):
-            self.script_time_string = format_str_conf.get("script_time_string")
-        else:
-            self.script_time_string = "Script Time: {time_diff}"
-
+        self.script_time_string = "Script Time: {time_diff}"
         self.full_output_string = (
             "\n"
             "---RESULT---\n"
@@ -59,6 +52,15 @@ class ConcurrencyCalculator():
             "\n\n"
             "{script_time}"
         )
+
+        if config:
+            if config.has_section('FORMAT_STRINGS'):
+                fmt_sec = config['FORMAT_STRINGS']
+                self.stats_string = fmt_sec.get('stats_string', fallback=self.stats_string)
+                self.bucket_count_string = fmt_sec.get('bucket_count_string', fallback=self.bucket_count_string)
+                self.script_time_string = fmt_sec.get('script_time_string', fallback=self.script_time_string)
+                self.full_output_string = fmt_sec.get('full_output_string', fallback=self.full_output_string)
+
 
     @staticmethod
     def get_data_file_contents(input_file, num_lines, start_position):
@@ -98,6 +100,7 @@ class ConcurrencyCalculator():
             print("")
             print('KeyboardInterrupt: User canceled current operation')
         finally:
+            print('')
             self.output_results()
 
     @staticmethod
@@ -199,10 +202,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Script to get concurrency stats for Vertica queries')
     parser.add_argument('-f', '--input_file', metavar='',
                         help='Input file to parse for concurrency stats (default: csv/output.csv)')
-    parser.add_argument('-n', '--num_lines', metavar='', type=int, help='Number the output lines, starting at 1')
-    parser.add_argument('-s', '--start_position', metavar='', choices=['beginning', 'end', 'random'],
+    parser.add_argument('-n', '--num-lines', metavar='', type=int, help='Number the output lines, starting at 1')
+    parser.add_argument('-s', '--start-position', metavar='', choices=['beginning', 'end', 'random'],
                         help='Position of the file to start reading files from. Options are: beginning, end, random (default: end)')
-    parser.add_argument('-t', '--format_type', metavar='', help='Output format type: text, json, csv (default: text)')
+    parser.add_argument('-t', '--format-type', metavar='', help='Output format type: text, json, csv (default: text)')
     parser.add_argument('-c', '--config', metavar='', help="Path to config file (default: ./config.ini)")
     args = parser.parse_args()
 
@@ -221,5 +224,10 @@ if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read(config_file)
 
-    cc = ConcurrencyCalculator(input_file_arg, num_lines_arg, start_position_arg, config)
+    if args.format_type:
+        format_type = args.format_type
+    else:
+        format_type = config.get("FORMAT_TYPE", "type", fallback="text")
+
+    cc = ConcurrencyCalculator(input_file_arg, num_lines_arg, start_position_arg, format_type, config)
     cc.calculate()
