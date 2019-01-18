@@ -3,12 +3,14 @@
 import sys
 from datetime import datetime
 import argparse
+import configparser as configparser
+import json
 import numpy as np
 
 
 class ConcurrencyCalculator():
 
-    def __init__(self, input_file, num_lines, start_position):
+    def __init__(self, input_file, num_lines, start_position, config=None):
         self.data = self.get_data_file_contents(input_file, num_lines, start_position)
         self.con_array = []
         self.slice_index = 0
@@ -20,22 +22,33 @@ class ConcurrencyCalculator():
         self.start = None
         self.end = None
 
-        self.set_output_strings()
+        self.format_type = config["FORMAT_TYPE"]["type"]
+        if self.format_type == 'text':
+            format_str_conf = config['FORMAT_STRINGS']
+            self.set_output_strings(format_str_conf)
 
-    def set_output_strings(self):
-        self.stats_string = (
-            "Q1 Conn       : {q1}\n"
-            "Median Conn   : {median}\n"
-            "Q3 Conn       : {q3}\n"
-            "95th % Conn   : {p95}\n"
-            "98th % Conn   : {p98}\n"
-            "Max Conn      : {max}\n"
-            "Num of MAX    : {num_of_max}\n"
-            "Avgerage Conn : {avg}\n"
-            "Query Count   : {count}"
-        )
+    def set_output_strings(self, format_str_conf=None):
+        if format_str_conf.get("stats_string"):
+            self.stats_string = format_str_conf.get("stats_string")
+        else:
+            self.stats_string = (
+                "Q1 Conn       : {q1}\n"
+                "Median Conn   : {median}\n"
+                "Q3 Conn       : {q3}\n"
+                "95th % Conn   : {p95}\n"
+                "98th % Conn   : {p98}\n"
+                "Max Conn      : {max}\n"
+                "Num of MAX    : {num_of_max}\n"
+                "Avgerage Conn : {avg}\n"
+                "Query Count   : {count}"
+            )
         self.bucket_count_string = 'Count of ({0}) : {1}'
-        self.script_time_string = "Script Time: {time_diff}"
+
+        if format_str_conf.get("script_time_string"):
+            self.script_time_string = format_str_conf.get("script_time_string")
+        else:
+            self.script_time_string = "Script Time: {time_diff}"
+
         self.full_output_string = (
             "\n"
             "---RESULT---\n"
@@ -133,27 +146,33 @@ class ConcurrencyCalculator():
         max = npArr.max()
 
         output_stats = {}
-        output_stats['max'] = max
-        output_stats['num_of_max'] = (npArr == max).sum()
-        output_stats['q1'] = np.percentile(npArr, 25)
-        output_stats['median'] = np.percentile(npArr, 25)
-        output_stats['q3'] = np.percentile(npArr, 25)
-        output_stats['p95'] = np.percentile(npArr, 95)
-        output_stats['p98'] = np.percentile(npArr, 98)
-        output_stats['avg'] = np.average(npArr)
+        output_stats['max'] = int(max)
+        output_stats['num_of_max'] = int((npArr == max).sum())
+        output_stats['q1'] = int(np.percentile(npArr, 25))
+        output_stats['median'] = int(np.percentile(npArr, 25))
+        output_stats['q3'] = int(np.percentile(npArr, 25))
+        output_stats['p95'] = int(np.percentile(npArr, 95))
+        output_stats['p98'] = int(np.percentile(npArr, 98))
+        output_stats['avg'] = float(np.average(npArr))
         output_stats['count'] = len(npArr)
 
         buckets = []
         for i in range(0, output_stats['max'] + 1):
-            bucket_count = (npArr == i).sum()
+            bucket_count = int((npArr == i).sum())
             buckets.append((i, bucket_count))
 
         output_stats['buckets'] = buckets
         output_stats['time_diff'] = self.end - self.start
 
-        self.print_resutls(npArr, output_stats)
+        if self.format_type == 'text':
+            self.print_resutls(output_stats)
+        elif self.format_type == 'json':
+            output_stats['time_diff'] = str(output_stats['time_diff'])
+            json_str = json.dumps(output_stats)
+            print('')
+            print(json_str)
 
-    def print_resutls(self, npArr, output_stats):
+    def print_resutls(self, output_stats):
         stats_string = self.stats_string.format(**output_stats)
         buckets_string = "\n".join(self.buckets_string_gen(output_stats['buckets']))
         script_time_string = self.script_time_string.format(**output_stats)
@@ -183,6 +202,8 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--num_lines', metavar='', type=int, help='Number the output lines, starting at 1')
     parser.add_argument('-s', '--start_position', metavar='', choices=['beginning', 'end', 'random'],
                         help='Position of the file to start reading files from. Options are: beginning, end, random (default: end)')
+    parser.add_argument('-t', '--format_type', metavar='', help='Output format type: text, json, csv (default: text)')
+    parser.add_argument('-c', '--config', metavar='', help="Path to config file (default: ./config.ini)")
     args = parser.parse_args()
 
     input_file_arg = args.input_file or 'csv/output.csv'
@@ -196,5 +217,9 @@ if __name__ == '__main__':
         else:
             start_position_arg = None
 
-    cc = ConcurrencyCalculator(input_file_arg, num_lines_arg, start_position_arg)
+    config_file = args.config or 'config.ini'
+    config = configparser.ConfigParser()
+    config.read(config_file)
+
+    cc = ConcurrencyCalculator(input_file_arg, num_lines_arg, start_position_arg, config)
     cc.calculate()
