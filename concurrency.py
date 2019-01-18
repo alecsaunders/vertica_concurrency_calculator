@@ -10,7 +10,7 @@ import numpy as np
 
 class ConcurrencyCalculator():
 
-    def __init__(self, input_file, num_lines, start_position, format_type, config=None):
+    def __init__(self, input_file, num_lines, start_position, show_preview, format_type, config=None):
         self.data = self.get_data_file_contents(input_file, num_lines, start_position)
         self.con_array = []
         self.slice_index = 0
@@ -21,6 +21,8 @@ class ConcurrencyCalculator():
         # Script time
         self.start = None
         self.end = None
+
+        self.show_preview = show_preview
 
         self.format_type = format_type
         if self.format_type == 'text':
@@ -43,7 +45,6 @@ class ConcurrencyCalculator():
         self.bucket_count_string = 'Count of ({0}) : {1}'
         self.script_time_string = "Script Time: {time_diff}"
         self.full_output_string = (
-            "\n"
             "---RESULT---\n"
             "{stats}"
             "\n\n"
@@ -93,14 +94,15 @@ class ConcurrencyCalculator():
                 concurrency = self.get_concurrency_of_query(query)
                 self.con_array.append(concurrency)
                 if i % update_interval == 0:
-                    self.update_progress_bar(self.cur_index, data_len, self.bar_length)
+                    self.update_progress_bar(self.show_preview, self.cur_index, data_len, self.bar_length)
         except KeyboardInterrupt:
             self.cur_index = len(self.con_array)
-            self.update_progress_bar(self.cur_index, data_len, self.bar_length)
+            self.update_progress_bar(self.show_preview, self.cur_index, data_len, self.bar_length)
             print("")
             print('KeyboardInterrupt: User canceled current operation')
         finally:
-            print('')
+            if self.show_preview:
+                print('')
             self.output_results()
 
     @staticmethod
@@ -132,16 +134,17 @@ class ConcurrencyCalculator():
             self.slice_index = tmp_slice_index
 
     @staticmethod
-    def update_progress_bar(cur_index, data_len, bar_length):
-        progress = int(float(cur_index) / float(data_len) * bar_length)
-        text = "\rProgress: [{0}] {1}% {2}/{3}".format(
-            "#" * progress + "-" * (bar_length - progress),
-            int(float(progress) / float(bar_length) * 100),
-            cur_index,
-            data_len
-        )
-        sys.stdout.write(text)
-        sys.stdout.flush()
+    def update_progress_bar(show_preview, cur_index, data_len, bar_length):
+        if show_preview:
+            progress = int(float(cur_index) / float(data_len) * bar_length)
+            text = "\rProgress: [{0}] {1}% {2}/{3}".format(
+                "#" * progress + "-" * (bar_length - progress),
+                int(float(progress) / float(bar_length) * 100),
+                cur_index,
+                data_len
+            )
+            sys.stdout.write(text)
+            sys.stdout.flush()
 
     def output_results(self):
         self.end = datetime.now()
@@ -172,7 +175,6 @@ class ConcurrencyCalculator():
         elif self.format_type == 'json':
             output_stats['time_diff'] = str(output_stats['time_diff'])
             json_str = json.dumps(output_stats)
-            print('')
             print(json_str)
 
     def print_resutls(self, output_stats):
@@ -206,6 +208,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--start-position', metavar='', choices=['beginning', 'end', 'random'],
                         help='Position of the file to start reading files from. Options are: beginning, end, random (default: end)')
     parser.add_argument('-t', '--format-type', metavar='', help='Output format type: text, json, csv (default: text)')
+    parser.add_argument('-x', '--no-preview', action='store_true', help='Do not show live preview in console')
     parser.add_argument('-c', '--config', metavar='', help="Path to config file (default: ./config.ini)")
     args = parser.parse_args()
 
@@ -220,6 +223,8 @@ if __name__ == '__main__':
         else:
             start_position_arg = None
 
+    show_preview = True if not args.no_preview else False
+
     config_file = args.config or 'config.ini'
     config = configparser.ConfigParser()
     config.read(config_file)
@@ -229,5 +234,5 @@ if __name__ == '__main__':
     else:
         format_type = config.get("FORMAT_TYPE", "type", fallback="text")
 
-    cc = ConcurrencyCalculator(input_file_arg, num_lines_arg, start_position_arg, format_type, config)
+    cc = ConcurrencyCalculator(input_file_arg, num_lines_arg, start_position_arg, show_preview, format_type, config)
     cc.calculate()
