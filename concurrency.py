@@ -207,7 +207,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--num-lines', metavar='', type=int, help='Number the output lines, starting at 1')
     parser.add_argument('-s', '--start-position', metavar='', choices=['beginning', 'end', 'random'],
                         help='Position of the file to start reading files from. Options are: beginning, end, random (default: end)')
-    parser.add_argument('-t', '--format-type', metavar='', help='Output format type: text, json, csv (default: text)')
+    parser.add_argument('-t', '--format-type', metavar='', help='Output format type: text or json (default: text)')
     parser.add_argument('-x', '--no-preview', action='store_true', help='Do not show live preview in console')
     parser.add_argument('-c', '--config', metavar='', help="Path to config file (default: ./config.ini)")
     args = parser.parse_args()
