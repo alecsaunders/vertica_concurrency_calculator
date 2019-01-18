@@ -20,6 +20,33 @@ class ConcurrencyCalculator():
         self.start = None
         self.end = None
 
+        self.set_output_strings()
+
+    def set_output_strings(self):
+        self.stats_string = (
+            "Q1 Conn       : {q1}\n"
+            "Median Conn   : {median}\n"
+            "Q3 Conn       : {q3}\n"
+            "95th % Conn   : {p95}\n"
+            "98th % Conn   : {p98}\n"
+            "Max Conn      : {max}\n"
+            "Num of MAX    : {num_of_max}\n"
+            "Avgerage Conn : {avg}\n"
+            "Query Count   : {count}"
+        )
+        self.bucket_count_string = 'Count of ({0}) : {1}'
+        self.script_time_string = "Script Time: {time_diff}"
+        self.full_output_string = (
+            "\n"
+            "---RESULT---\n"
+            "{stats}"
+            "\n\n"
+            "---BUCKETS---\n"
+            "{buckets}"
+            "\n\n"
+            "{script_time}"
+        )
+
     @staticmethod
     def get_data_file_contents(input_file, num_lines, start_position):
         data = open(input_file, 'r').readlines()
@@ -103,37 +130,50 @@ class ConcurrencyCalculator():
     def output_results(self):
         self.end = datetime.now()
         npArr = np.array(self.con_array)
-
         max = npArr.max()
-        num_of_max = (npArr == max).sum()
 
-        self.print_resutls(npArr, max, num_of_max)
+        output_stats = {}
+        output_stats['max'] = max
+        output_stats['num_of_max'] = (npArr == max).sum()
+        output_stats['q1'] = np.percentile(npArr, 25)
+        output_stats['median'] = np.percentile(npArr, 25)
+        output_stats['q3'] = np.percentile(npArr, 25)
+        output_stats['p95'] = np.percentile(npArr, 95)
+        output_stats['p98'] = np.percentile(npArr, 98)
+        output_stats['avg'] = np.average(npArr)
+        output_stats['count'] = len(npArr)
 
-    def print_resutls(self, npArr, max, num_of_max):
-        print("")
-        print("---RESULT---")
-        print("Q1 Conn       : {}".format(np.percentile(npArr, 25)))
-        print("Median Conn   : {}".format(np.percentile(npArr, 50)))
-        print("Q3 Conn       : {}".format(np.percentile(npArr, 75)))
-        print("95th % Conn   : {}".format(np.percentile(npArr, 95)))
-        print("98th % Conn   : {}".format(np.percentile(npArr, 98)))
-        print("Max Conn      : {}".format(max))
-        print("Num of MAX    : {}".format(num_of_max))
-        print("Avgerage Conn : {}".format(np.average(npArr)))
-        print("Query Count   : {}".format(len(npArr)))
-        print("")
+        buckets = []
+        for i in range(0, output_stats['max'] + 1):
+            bucket_count = (npArr == i).sum()
+            buckets.append((i, bucket_count))
 
-        print("---BUCKETS---")
-        for i in range(0, max + 1):
-            bucket_num = (npArr == i).sum()
-            if len(str(i)) == 1:
-                i_str = '0' + str(i)
+        output_stats['buckets'] = buckets
+        output_stats['time_diff'] = self.end - self.start
+
+        self.print_resutls(npArr, output_stats)
+
+    def print_resutls(self, npArr, output_stats):
+        stats_string = self.stats_string.format(**output_stats)
+        buckets_string = "\n".join(self.buckets_string_gen(output_stats['buckets']))
+        script_time_string = self.script_time_string.format(**output_stats)
+
+        full_output_dict = {}
+        full_output_dict['stats'] = stats_string
+        full_output_dict['buckets'] = buckets_string
+        full_output_dict['script_time'] = script_time_string
+        full_output_string = self.full_output_string.format(**full_output_dict)
+
+        print(full_output_string)
+
+    def buckets_string_gen(self, buckets):
+        for bucket in buckets:
+            if len(str(bucket[0])) == 1:
+                i_str = '0' + str(bucket[0])
             else:
-                i_str = str(i)
-            print('Count of ({0}) : {1}'.format(i_str, bucket_num))
+                i_str = str(str(bucket[0]))
+            yield self.bucket_count_string.format(*bucket)
 
-        time_diff = self.end - self.start
-        print("\nScript Time: " + str(time_diff))
 
 
 if __name__ == '__main__':
