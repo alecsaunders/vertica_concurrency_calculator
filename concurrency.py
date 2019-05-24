@@ -39,7 +39,7 @@ class ConcurrencyCalculator():
             "98th % Conn   : {p98}\n"
             "Max Conn      : {max}\n"
             "Num of MAX    : {num_of_max}\n"
-            "Avgerage Conn : {avg}\n"
+            "Average Conn  : {avg}\n"
             "Query Count   : {count}"
         )
         self.bucket_count_string = 'Count of ({0}) : {1}'
