@@ -1,10 +1,10 @@
 SELECT EXTRACT(EPOCH FROM start_timestamp), EXTRACT(EPOCH FROM end_timestamp)
 FROM
-        DBMONITOR.query_requests_archive q
+        query_requests q
         JOIN
         (
                 SELECT DISTINCT pool_name, node_name, transaction_id, statement_id
-                FROM DBMONITOR.dc_resource_acquisitions
+                FROM dc_resource_acquisitions
         ) r
                 ON q.node_name = r.node_name
                 AND q.transaction_id = r.transaction_id
