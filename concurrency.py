@@ -101,6 +101,7 @@ class ConcurrencyCalculator():
             print("")
             print('KeyboardInterrupt: User canceled current operation')
         finally:
+            self.update_progress_bar(self.show_preview, self.cur_index, data_len, self.bar_length)
             if self.show_preview:
                 print('')
             self.output_results()
