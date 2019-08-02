@@ -24,6 +24,22 @@ WHERE
 ORDER BY 1, 2;
 ```
 
+### Export Results to CSV file
+
+With the example query above, use vsql to export the unformatted results to a csv file.
+
+```sh
+$ vsql -U <user> -h <host> -CAtX example_query.sql > output.csv
+```
+
+### Evaluate Concurrency
+
+```sh
+$ python concurrency.py -f output.csv
+```
+
+Use `-h` for a full list of options for the `concurrency.py` script.
+
 ## Dependencies
 
 + [NumPy](http://www.numpy.org/)
