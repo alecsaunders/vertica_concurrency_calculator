@@ -66,6 +66,8 @@ class ConcurrencyCalculator():
     @staticmethod
     def get_data_file_contents(input_file, num_lines, start_position):
         data = open(input_file, 'r').readlines()
+        if not data:
+            raise ValueError("Input file contents empty")
         if num_lines:
             if start_position == 'beginning':
                 data = data[:num_lines]
